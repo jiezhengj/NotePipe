@@ -18,10 +18,10 @@ import type NotePipePlugin from './main';
  * 选区变化防抖：在指定时间内多次选区变化只触发一次复制。
  */
 function debounce(fn: () => void, delay: number): () => void {
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    let timer: number | null = null;
     return () => {
-        if (timer !== null) clearTimeout(timer);
-        timer = setTimeout(() => {
+        if (timer !== null) window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
             timer = null;
             fn();
         }, delay);
@@ -100,7 +100,7 @@ export function registerGlobalCopyInterceptor(plugin: NotePipePlugin): void {
 
     globalSelectionHandler = () => {
         // 通过 requestAnimationFrame 延迟，确保 selection 已稳定
-        requestAnimationFrame(() => debouncedCopy());
+        window.requestAnimationFrame(() => debouncedCopy());
     };
 
     document.addEventListener(

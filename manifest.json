@@ -1,7 +1,7 @@
 {
   "id": "notepipe",
   "name": "NotePipe",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minAppVersion": "1.5.0",
   "description": "Copy text with file path and line number context, ready to paste into AI agent terminals.",
   "author": "jiezhengj",

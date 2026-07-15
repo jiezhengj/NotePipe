@@ -16,11 +16,11 @@ import { t } from './i18n';
 
 class SharedFloatingButton {
     private el: HTMLElement | null = null;
-    private hideTimer: ReturnType<typeof setTimeout> | null = null;
+    private hideTimer: number | null = null;
 
     show(top: number, left: number, onClick: () => void): void {
         if (this.hideTimer) {
-            clearTimeout(this.hideTimer);
+            window.clearTimeout(this.hideTimer);
             this.hideTimer = null;
         }
 
@@ -43,7 +43,7 @@ class SharedFloatingButton {
 
     hide(): void {
         // 延迟隐藏，避免在快速连续选区间闪烁
-        this.hideTimer = setTimeout(() => {
+        this.hideTimer = window.setTimeout(() => {
             if (this.el) {
                 this.el.classList.remove('visible');
             }
@@ -52,7 +52,7 @@ class SharedFloatingButton {
 
     remove(): void {
         if (this.hideTimer) {
-            clearTimeout(this.hideTimer);
+            window.clearTimeout(this.hideTimer);
         }
         if (this.el) {
             this.el.remove();

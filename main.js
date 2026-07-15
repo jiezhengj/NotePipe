@@ -361,7 +361,7 @@ var SharedFloatingButton = class {
   }
   show(top, left, onClick) {
     if (this.hideTimer) {
-      clearTimeout(this.hideTimer);
+      window.clearTimeout(this.hideTimer);
       this.hideTimer = null;
     }
     if (!this.el) {
@@ -378,7 +378,7 @@ var SharedFloatingButton = class {
     this.el.classList.add("visible");
   }
   hide() {
-    this.hideTimer = setTimeout(() => {
+    this.hideTimer = window.setTimeout(() => {
       if (this.el) {
         this.el.classList.remove("visible");
       }
@@ -386,7 +386,7 @@ var SharedFloatingButton = class {
   }
   remove() {
     if (this.hideTimer) {
-      clearTimeout(this.hideTimer);
+      window.clearTimeout(this.hideTimer);
     }
     if (this.el) {
       this.el.remove();
@@ -484,8 +484,8 @@ var import_obsidian4 = require("obsidian");
 function debounce(fn, delay) {
   let timer = null;
   return () => {
-    if (timer !== null) clearTimeout(timer);
-    timer = setTimeout(() => {
+    if (timer !== null) window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
       timer = null;
       fn();
     }, delay);
@@ -533,7 +533,7 @@ function registerGlobalCopyInterceptor(plugin) {
     void plugin.copyGlobalContext();
   }, 300);
   globalSelectionHandler = () => {
-    requestAnimationFrame(() => debouncedCopy());
+    window.requestAnimationFrame(() => debouncedCopy());
   };
   document.addEventListener(
     "selectionchange",
