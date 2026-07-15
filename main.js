@@ -355,72 +355,30 @@ function truncateSelection(selection, maxBytes = 100 * 1024, truncationHint = ".
 // src/floating-button.ts
 var import_view = require("@codemirror/view");
 var import_obsidian3 = require("obsidian");
-var FloatingButtonManager = class {
-  constructor(plugin) {
-    this.buttonEl = null;
-    this.plugin = plugin;
-    this.boundMouseUpHandler = this.onMouseUp.bind(this);
-    this.boundScrollHandler = () => this.hide();
+var SharedFloatingButton = class {
+  constructor() {
+    this.el = null;
   }
-  activate() {
-    document.addEventListener("mouseup", this.boundMouseUpHandler);
-    document.addEventListener("scroll", this.boundScrollHandler, { capture: true });
-  }
-  deactivate() {
-    document.removeEventListener("mouseup", this.boundMouseUpHandler);
-    document.removeEventListener("scroll", this.boundScrollHandler, { capture: true });
-    this.hide();
-    this.removeButtonElement();
-  }
-  // -------------------------------------------------------------------
-  // 事件处理
-  // -------------------------------------------------------------------
-  onMouseUp(event) {
-    requestAnimationFrame(() => this.handleSelection(event));
-  }
-  handleSelection(_event) {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !selection.toString().trim()) {
-      this.hide();
-      return;
+  show(top, left, onClick) {
+    if (!this.el) {
+      this.el = this.createEl(onClick);
     }
-    const activeView = this.plugin.app.workspace.getActiveViewOfType(import_obsidian3.MarkdownView);
-    if (!activeView || activeView.getMode() !== "preview") {
-      this.hide();
-      return;
-    }
-    if (selection.rangeCount === 0) {
-      this.hide();
-      return;
-    }
-    const range = selection.getRangeAt(0);
-    const viewContainer = activeView.previewMode?.containerEl ?? activeView.containerEl;
-    if (!viewContainer.contains(range.commonAncestorContainer)) {
-      this.hide();
-      return;
-    }
-    const rect = range.getBoundingClientRect();
-    this.show(rect);
-  }
-  // -------------------------------------------------------------------
-  // 浮层显示/隐藏
-  // -------------------------------------------------------------------
-  show(rect) {
-    if (!this.buttonEl) {
-      this.buttonEl = this.createButtonElement();
-    }
-    const top = rect.bottom + 8;
-    const left = Math.max(8, rect.right - 40);
-    this.buttonEl.style.top = `${top}px`;
-    this.buttonEl.style.left = `${left}px`;
-    this.buttonEl.classList.add("visible");
+    this.el.style.top = `${top}px`;
+    this.el.style.left = `${left}px`;
+    this.el.classList.add("visible");
   }
   hide() {
-    if (this.buttonEl) {
-      this.buttonEl.classList.remove("visible");
+    if (this.el) {
+      this.el.classList.remove("visible");
     }
   }
-  createButtonElement() {
+  remove() {
+    if (this.el) {
+      this.el.remove();
+      this.el = null;
+    }
+  }
+  createEl(onClick) {
     const btn = document.createElement("button");
     btn.className = "notepipe-floating-btn";
     btn.title = t("floating.tooltip");
@@ -429,24 +387,122 @@ var FloatingButtonManager = class {
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
         </svg>`;
-    btn.addEventListener("click", () => {
-      this.plugin.copyGlobalContext();
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick();
       this.hide();
+    });
+    btn.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
     });
     document.body.appendChild(btn);
     return btn;
   }
-  removeButtonElement() {
-    if (this.buttonEl) {
-      this.buttonEl.remove();
-      this.buttonEl = null;
+};
+function selectionEndCoords(view) {
+  const pos = view.state.selection.main.to;
+  const coords = view.coordsAtPos(pos);
+  if (!coords) return null;
+  return {
+    top: coords.top - 32,
+    left: coords.right + 4
+  };
+}
+var EditorSelectionWatcher = class {
+  constructor(view, button, onClick) {
+    this.button = button;
+    this.onClick = onClick;
+    this.updateButton(view);
+  }
+  update(update) {
+    if (update.selectionSet || update.docChanged) {
+      this.updateButton(update.view);
     }
   }
+  updateButton(view) {
+    const sel = view.state.selection.main;
+    if (sel.empty) {
+      this.button.hide();
+      return;
+    }
+    const coords = selectionEndCoords(view);
+    if (!coords) {
+      this.button.hide();
+      return;
+    }
+    this.button.show(coords.top, coords.left, this.onClick);
+  }
+  destroy() {
+    this.button.hide();
+  }
+};
+function createFloatingButtonExtension(button, onClick) {
+  return import_view.ViewPlugin.define(
+    (view) => new EditorSelectionWatcher(view, button, onClick)
+  );
+}
+var FloatingButtonManager = class {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this.button = new SharedFloatingButton();
+    this.boundMouseUpHandler = this.onMouseUp.bind(this);
+    this.boundScrollHandler = () => this.button.hide();
+  }
+  /** 获取共享按钮实例（供 CM6 extension 使用） */
+  getSharedButton() {
+    return this.button;
+  }
+  activate() {
+    document.addEventListener("mouseup", this.boundMouseUpHandler);
+    document.addEventListener("scroll", this.boundScrollHandler, { capture: true });
+  }
+  deactivate() {
+    document.removeEventListener("mouseup", this.boundMouseUpHandler);
+    document.removeEventListener("scroll", this.boundScrollHandler, { capture: true });
+    this.button.hide();
+    this.button.remove();
+  }
   // -------------------------------------------------------------------
-  // 强制刷新（供外部调用，如主题切换后）
+  // 阅读模式事件处理
+  // -------------------------------------------------------------------
+  onMouseUp(_event) {
+    requestAnimationFrame(() => this.handleSelection());
+  }
+  handleSelection() {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.toString().trim()) {
+      this.button.hide();
+      return;
+    }
+    const activeView = this.plugin.app.workspace.getActiveViewOfType(import_obsidian3.MarkdownView);
+    if (!activeView || activeView.getMode() !== "preview") {
+      this.button.hide();
+      return;
+    }
+    if (selection.rangeCount === 0) {
+      this.button.hide();
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    const viewContainer = activeView.previewMode?.containerEl ?? activeView.containerEl;
+    if (!viewContainer.contains(range.commonAncestorContainer)) {
+      this.button.hide();
+      return;
+    }
+    const rect = range.getBoundingClientRect();
+    const top = rect.top - 32;
+    const left = rect.right + 4;
+    this.button.show(top, left, () => {
+      this.plugin.copyGlobalContext();
+    });
+  }
+  // -------------------------------------------------------------------
+  // 强制刷新
   // -------------------------------------------------------------------
   forceUpdate() {
-    this.hide();
+    this.button.hide();
   }
 };
 
@@ -544,6 +600,12 @@ var NotePipePlugin = class extends import_obsidian5.Plugin {
     });
     if (this.settings.showFloatingButton) {
       this.floatingButton = new FloatingButtonManager(this);
+      this.registerEditorExtension(
+        createFloatingButtonExtension(
+          this.floatingButton.getSharedButton(),
+          () => this.copyGlobalContext()
+        )
+      );
       this.floatingButton.activate();
     }
     if (this.settings.enableAlwaysCopy) {
@@ -585,13 +647,28 @@ var NotePipePlugin = class extends import_obsidian5.Plugin {
     await this.copyResolvedContext(context);
   }
   /**
-   * 全局复制（阅读模式 / 文件列表 / 无编辑器的场景）。
+   * 全局复制（阅读模式 / 文件列表 / 编辑模式浮层按钮点击等场景）。
    */
   async copyGlobalContext() {
     const fileListContext = resolveFileExplorerContext();
     if (fileListContext) {
       await this.copyFileList(fileListContext.files);
       return;
+    }
+    const activeView = this.app.workspace.getActiveViewOfType(import_obsidian5.MarkdownView);
+    if (activeView && activeView.getMode() === "source" && activeView.editor) {
+      const selection = activeView.editor.getSelection();
+      if (selection.trim().length > 0) {
+        const context2 = await resolveContext(
+          this.app,
+          activeView.editor,
+          activeView
+        );
+        if (context2) {
+          await this.copyResolvedContext(context2);
+          return;
+        }
+      }
     }
     const context = await resolveContext(this.app);
     if (!context) {

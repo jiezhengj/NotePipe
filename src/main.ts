@@ -22,7 +22,7 @@ import {
     renderTemplate,
     truncateSelection,
 } from './template-engine';
-import { FloatingButtonManager } from './floating-button';
+import { FloatingButtonManager, createFloatingButtonExtension } from './floating-button';
 import {
     copyInterceptorExtension,
     registerGlobalCopyInterceptor,
@@ -62,9 +62,17 @@ export default class NotePipePlugin extends Plugin {
             callback: () => this.copyGlobalContext(),
         });
 
-        // 浮层按钮
+        // 浮层按钮：编辑模式（CM6 选区检测）+ 阅读模式（DOM mouseup）
         if (this.settings.showFloatingButton) {
             this.floatingButton = new FloatingButtonManager(this);
+            // 编辑模式：CM6 检测选区 → 固定定位浮层
+            this.registerEditorExtension(
+                createFloatingButtonExtension(
+                    this.floatingButton.getSharedButton(),
+                    () => this.copyGlobalContext(),
+                ),
+            );
+            // 阅读模式：DOM mouseup 监听
             this.floatingButton.activate();
         }
 
@@ -122,7 +130,7 @@ export default class NotePipePlugin extends Plugin {
     }
 
     /**
-     * 全局复制（阅读模式 / 文件列表 / 无编辑器的场景）。
+     * 全局复制（阅读模式 / 文件列表 / 编辑模式浮层按钮点击等场景）。
      */
     async copyGlobalContext(): Promise<void> {
         // 优先检测文件列表
@@ -132,7 +140,25 @@ export default class NotePipePlugin extends Plugin {
             return;
         }
 
-        // 其次走标准上下文解析
+        // 检测编辑模式（浮层按钮点击时无 editor 参数，需手动获取）
+        const activeView =
+            this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView && activeView.getMode() === 'source' && activeView.editor) {
+            const selection = activeView.editor.getSelection();
+            if (selection.trim().length > 0) {
+                const context = await resolveContext(
+                    this.app,
+                    activeView.editor,
+                    activeView,
+                );
+                if (context) {
+                    await this.copyResolvedContext(context);
+                    return;
+                }
+            }
+        }
+
+        // 其次走标准上下文解析（阅读模式等）
         const context = await resolveContext(this.app);
         if (!context) {
             new Notice(t('notice.noContext'));
