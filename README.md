@@ -22,7 +22,7 @@ Select text → click the floating button → paste into terminal. The output us
 
 | | |
 |---|---|
-| 🔗 **Copy with context** | `Cmd+Shift+C` / `Ctrl+Shift+C` copies selected text with file path and line number |
+| 🔗 **Copy with context** | Assign a hotkey in Obsidian Settings → Hotkeys, then copy selected text with file path and line number |
 | 🎯 **Floating button** | A button appears near your selection in both edit and reading mode |
 | 📝 **Multi-scenario** | Edit mode, reading mode, and file explorer are all supported |
 | 📂 **Absolute paths** | Outputs full filesystem paths by default — ready for terminal use |
@@ -47,7 +47,7 @@ npm run build
 
 | Scenario | Action | Output |
 |---|---|---|
-| Edit mode — select text | `Cmd/Ctrl+Shift+C` | `> /path/note.md:5`<br>`> selected text` |
+| Edit mode — select text | Hotkey or command palette | `> /path/note.md:5`<br>`> selected text` |
 | Reading mode — select text | Click floating button | `> /path/note.md:3-7`<br>`> multi-line selection` |
 | File explorer — select files | Command palette → Copy | `> /path/note1.md` |
 
@@ -70,13 +70,19 @@ npm run build
 | **absolute** (default) | `/Users/xxx/vault/note.md:5` | Pasting into terminal |
 | **vault-relative** | `notes/daily.md:5` | Cross-machine portability |
 
-### Hotkey conflicts
+### Hotkey
 
-| Platform | Known conflict | Fix |
+No default hotkey is set. To assign one:
+
+1. Open Obsidian Settings → Hotkeys
+2. Search "NotePipe: Copy with context"
+3. Assign your preferred shortcut (e.g. `Cmd+Shift+C`)
+
+| Platform | Recommendation | Note |
 |---|---|---|
-| Windows | Terminal may use `Ctrl+Shift+C` | Customize in Obsidian Settings → Hotkeys |
-| Linux | GNOME / Konsole use `Ctrl+Shift+C` | Same as above, or use command palette |
-| macOS | Usually available | Same as above |
+| macOS | `Cmd+Shift+C` | Usually available |
+| Windows | `Ctrl+Shift+C` or `Alt+Shift+C` | `Ctrl+Shift+C` may conflict with terminal |
+| Linux | `Ctrl+Shift+C` or `Alt+Shift+C` | GNOME / Konsole use `Ctrl+Shift+C` for copy |
 
 ### Development
 
@@ -121,7 +127,7 @@ MIT
 
 | | |
 |---|---|
-| 🔗 **附带上下文复制** | `Cmd+Shift+C` / `Ctrl+Shift+C` 一键复制选中文本，自动附带文件路径和行号 |
+| 🔗 **附带上下文复制** | 在 Obsidian 设置 → 快捷键中绑定后，一键复制选中文本并附带文件路径和行号 |
 | 🎯 **浮层按钮** | 选中文本后选区右上角出现复制按钮，编辑/阅读模式均支持 |
 | 📝 **多场景支持** | 编辑模式、阅读模式、文件列表均可使用 |
 | 📂 **绝对路径** | 默认输出完整文件系统路径，终端中可直接定位 |
@@ -146,7 +152,7 @@ npm run build
 
 | 场景 | 操作 | 输出 |
 |---|---|---|
-| 编辑模式选中文本 | `Cmd/Ctrl+Shift+C` | `> /path/note.md:5`<br>`> 选中文本` |
+| 编辑模式选中文本 | 快捷键或命令面板 | `> /path/note.md:5`<br>`> 选中文本` |
 | 阅读模式选中文本 | 点击浮层按钮 | `> /path/note.md:3-7`<br>`> 多行内容` |
 | 文件列表选中文件 | 命令面板 → 复制 | `> /path/note1.md` |
 
@@ -169,13 +175,19 @@ npm run build
 | **absolute**（默认） | `/Users/xxx/vault/note.md:5` | 粘贴到终端使用 |
 | **vault-relative** | `notes/daily.md:5` | 跨机器可移植 |
 
-### 快捷键冲突
+### 快捷键
 
-| 平台 | 已知冲突 | 解决方式 |
+插件不预设默认快捷键。设置方式：
+
+1. 打开 Obsidian 设置 → 快捷键
+2. 搜索 "NotePipe: 复制并附带上下文"
+3. 绑定你习惯的快捷键（如 `Cmd+Shift+C`）
+
+| 平台 | 推荐快捷键 | 注意 |
 |---|---|---|
-| Windows | 终端可能占用 `Ctrl+Shift+C` | Obsidian 设置 → 快捷键 → 自定义 |
-| Linux | GNOME / Konsole 占用 `Ctrl+Shift+C` | 同上，或使用命令面板 |
-| macOS | 一般无冲突 | 如有冲突同样可自定义 |
+| macOS | `Cmd+Shift+C` | 一般无冲突 |
+| Windows | `Ctrl+Shift+C` 或 `Alt+Shift+C` | `Ctrl+Shift+C` 可能与终端冲突 |
+| Linux | `Ctrl+Shift+C` 或 `Alt+Shift+C` | GNOME / Konsole 占用 `Ctrl+Shift+C` |
 
 ### 开发
 
