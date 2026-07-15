@@ -52,8 +52,8 @@ export class NotePipeSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        // ── Templates 分组 ──────────────────────────────────────────
-        containerEl.createEl('h3', { text: t('settings.templates') });
+        // ── Templates ────────────────────────────────────────────────
+        new Setting(containerEl).setName(t('settings.templates')).setHeading();
         containerEl.createEl('p', {
             text: t('settings.templatesDesc'),
             cls: 'setting-item-description',
@@ -98,7 +98,7 @@ export class NotePipeSettingTab extends PluginSettingTab {
         varRef.createEl('code', { text: vars.join('  ') });
 
         // ── Path 分组 ───────────────────────────────────────────────
-        containerEl.createEl('h3', { text: t('settings.path') });
+        new Setting(containerEl).setName(t('settings.path')).setHeading();
 
         new Setting(containerEl)
             .setName(t('settings.pathStyle'))
@@ -115,7 +115,7 @@ export class NotePipeSettingTab extends PluginSettingTab {
             });
 
         // ── Triggers 分组 ───────────────────────────────────────────
-        containerEl.createEl('h3', { text: t('settings.triggers') });
+        new Setting(containerEl).setName(t('settings.triggers')).setHeading();
 
         new Setting(containerEl)
             .setName(t('settings.showFloatingButton'))
@@ -143,7 +143,7 @@ export class NotePipeSettingTab extends PluginSettingTab {
             });
 
         // ── Advanced 分组 ───────────────────────────────────────────
-        containerEl.createEl('h3', { text: t('settings.advanced') });
+        new Setting(containerEl).setName(t('settings.advanced')).setHeading();
 
         const alwaysCopyWarning = containerEl.createDiv({
             cls: 'setting-item-description',

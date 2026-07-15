@@ -66,10 +66,29 @@ class SharedFloatingButton {
         btn.title = t('floating.tooltip');
         btn.setAttribute('aria-label', t('floating.tooltip'));
 
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>`;
+        // 使用 DOM API 创建 SVG 图标（符合 Obsidian 安全规范，避免 innerHTML）
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', '9');
+        rect.setAttribute('y', '9');
+        rect.setAttribute('width', '13');
+        rect.setAttribute('height', '13');
+        rect.setAttribute('rx', '2');
+        rect.setAttribute('ry', '2');
+        svg.appendChild(rect);
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1');
+        svg.appendChild(path);
+
+        btn.appendChild(svg);
 
         btn.addEventListener('mousedown', (e) => {
             e.preventDefault();

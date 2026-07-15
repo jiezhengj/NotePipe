@@ -142,7 +142,7 @@ var NotePipeSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h3", { text: t("settings.templates") });
+    new import_obsidian.Setting(containerEl).setName(t("settings.templates")).setHeading();
     containerEl.createEl("p", {
       text: t("settings.templatesDesc"),
       cls: "setting-item-description"
@@ -176,14 +176,14 @@ var NotePipeSettingTab = class extends import_obsidian.PluginSettingTab {
     ];
     varRef.createEl("br");
     varRef.createEl("code", { text: vars.join("  ") });
-    containerEl.createEl("h3", { text: t("settings.path") });
+    new import_obsidian.Setting(containerEl).setName(t("settings.path")).setHeading();
     new import_obsidian.Setting(containerEl).setName(t("settings.pathStyle")).setDesc(t("settings.pathStyleDesc")).addDropdown((dropdown) => {
       dropdown.addOption("absolute", t("settings.pathAbsolute")).addOption("vault-relative", t("settings.pathVaultRelative")).setValue(this.plugin.settings.pathStyle).onChange(async (value) => {
         this.plugin.settings.pathStyle = value;
         await this.plugin.saveSettings();
       });
     });
-    containerEl.createEl("h3", { text: t("settings.triggers") });
+    new import_obsidian.Setting(containerEl).setName(t("settings.triggers")).setHeading();
     new import_obsidian.Setting(containerEl).setName(t("settings.showFloatingButton")).setDesc(t("settings.showFloatingButtonDesc")).addToggle((toggle) => {
       toggle.setValue(this.plugin.settings.showFloatingButton).onChange(async (value) => {
         this.plugin.settings.showFloatingButton = value;
@@ -196,7 +196,7 @@ var NotePipeSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    containerEl.createEl("h3", { text: t("settings.advanced") });
+    new import_obsidian.Setting(containerEl).setName(t("settings.advanced")).setHeading();
     const alwaysCopyWarning = containerEl.createDiv({
       cls: "setting-item-description"
     });
@@ -398,10 +398,25 @@ var SharedFloatingButton = class {
     btn.className = "notepipe-floating-btn";
     btn.title = t("floating.tooltip");
     btn.setAttribute("aria-label", t("floating.tooltip"));
-    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>`;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", "9");
+    rect.setAttribute("y", "9");
+    rect.setAttribute("width", "13");
+    rect.setAttribute("height", "13");
+    rect.setAttribute("rx", "2");
+    rect.setAttribute("ry", "2");
+    svg.appendChild(rect);
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
+    svg.appendChild(path);
+    btn.appendChild(svg);
     btn.addEventListener("mousedown", (e) => {
       e.preventDefault();
       e.stopPropagation();
