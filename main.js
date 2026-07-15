@@ -127,8 +127,8 @@ function t(key, ...args) {
 // src/settings.ts
 var import_obsidian = require("obsidian");
 var DEFAULT_SETTINGS = {
-  singleLineTemplate: "{{path}}:{{startLine}}\n{{selection}}",
-  multiLineTemplate: "{{path}}:{{startLine}}-{{endLine}}\n{{selection}}",
+  singleLineTemplate: "> {{path}}:{{startLine}}\n> {{selection}}",
+  multiLineTemplate: "> {{path}}:{{startLine}}-{{endLine}}\n> {{selection}}",
   pathStyle: "absolute",
   showFloatingButton: true,
   enableHotkey: true,
@@ -337,7 +337,7 @@ function buildTemplateContext(path, selection, startLine, endLine) {
   return { path, fileName, startLine, endLine, selection, lines, folder };
 }
 function renderTemplate(template, context) {
-  return template.replace(/\{\{path\}\}/g, context.path).replace(/\{\{fileName\}\}/g, context.fileName).replace(/\{\{startLine\}\}/g, context.startLine?.toString() ?? "").replace(/\{\{endLine\}\}/g, context.endLine?.toString() ?? "").replace(/\{\{selection\}\}/g, context.selection ?? "").replace(/\{\{lines\}\}/g, context.lines).replace(/\{\{folder\}\}/g, context.folder).replace(/\\n/g, "\n");
+  return template.replace(/\{\{path\}\}/g, context.path).replace(/\{\{fileName\}\}/g, context.fileName).replace(/\{\{startLine\}\}/g, context.startLine?.toString() ?? "").replace(/\{\{endLine\}\}/g, context.endLine?.toString() ?? "").replace(/\{\{selection\}\}/g, context.selection ? context.selection.replace(/\n/g, "\n> ") : "").replace(/\{\{lines\}\}/g, context.lines).replace(/\{\{folder\}\}/g, context.folder).replace(/\\n/g, "\n");
 }
 function truncateSelection(selection, maxBytes = 100 * 1024, truncationHint = "... (truncated)") {
   if (selection.length < maxBytes) return selection;

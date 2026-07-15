@@ -28,8 +28,8 @@ export interface NotePipeSettings {
 }
 
 export const DEFAULT_SETTINGS: NotePipeSettings = {
-    singleLineTemplate: '{{path}}:{{startLine}}\n{{selection}}',
-    multiLineTemplate: '{{path}}:{{startLine}}-{{endLine}}\n{{selection}}',
+    singleLineTemplate: '> {{path}}:{{startLine}}\n> {{selection}}',
+    multiLineTemplate: '> {{path}}:{{startLine}}-{{endLine}}\n> {{selection}}',
     pathStyle: 'absolute',
     showFloatingButton: true,
     enableHotkey: true,

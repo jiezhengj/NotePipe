@@ -57,7 +57,8 @@ export function renderTemplate(template: string, context: TemplateContext): stri
         .replace(/\{\{fileName\}\}/g, context.fileName)
         .replace(/\{\{startLine\}\}/g, context.startLine?.toString() ?? '')
         .replace(/\{\{endLine\}\}/g, context.endLine?.toString() ?? '')
-        .replace(/\{\{selection\}\}/g, context.selection ?? '')
+        // 选中文本每行换行后加统一前缀，方便直接拼接
+        .replace(/\{\{selection\}\}/g, context.selection ? context.selection.replace(/\n/g, '\n> ') : '')
         .replace(/\{\{lines\}\}/g, context.lines)
         .replace(/\{\{folder\}\}/g, context.folder)
         .replace(/\\n/g, '\n');
