@@ -1,4 +1,9 @@
-/* NotePipe — Floating Button Styles */
+/* NotePipe — Styles */
+
+/* 设置页模板输入框 */
+.notepipe-template-input {
+    width: 100%;
+}
 
 .notepipe-floating-btn {
     position: fixed;

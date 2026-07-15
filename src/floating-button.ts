@@ -66,7 +66,7 @@ class SharedFloatingButton {
         btn.title = t('floating.tooltip');
         btn.setAttribute('aria-label', t('floating.tooltip'));
 
-        // 使用 DOM API 创建 SVG 图标（符合 Obsidian 安全规范，避免 innerHTML）
+        // 使用 DOM API 创建 SVG 图标
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('viewBox', '0 0 24 24');
         svg.setAttribute('fill', 'none');
@@ -75,22 +75,22 @@ class SharedFloatingButton {
         svg.setAttribute('stroke-linecap', 'round');
         svg.setAttribute('stroke-linejoin', 'round');
 
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('x', '9');
-        rect.setAttribute('y', '9');
-        rect.setAttribute('width', '13');
-        rect.setAttribute('height', '13');
-        rect.setAttribute('rx', '2');
-        rect.setAttribute('ry', '2');
-        svg.appendChild(rect);
+        const svgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        svgRect.setAttribute('x', '9');
+        svgRect.setAttribute('y', '9');
+        svgRect.setAttribute('width', '13');
+        svgRect.setAttribute('height', '13');
+        svgRect.setAttribute('rx', '2');
+        svgRect.setAttribute('ry', '2');
+        svg.appendChild(svgRect);
 
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1');
-        svg.appendChild(path);
+        const svgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        svgPath.setAttribute('d', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1');
+        svg.appendChild(svgPath);
 
         btn.appendChild(svg);
 
-        btn.addEventListener('mousedown', (e) => {
+        btn.addEventListener('mousedown', (e: MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
         });
@@ -171,7 +171,7 @@ export class FloatingButtonManager {
         const left = rect.right + 4;
 
         this.button.show(top, left, () => {
-            this.plugin.copyGlobalContext();
+            void this.plugin.copyGlobalContext();
         });
     }
 

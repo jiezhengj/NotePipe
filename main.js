@@ -153,7 +153,7 @@ var NotePipeSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       });
       textarea.inputEl.rows = 2;
-      textarea.inputEl.style.width = "100%";
+      textarea.inputEl.addClass("notepipe-template-input");
     });
     new import_obsidian.Setting(containerEl).setName(t("settings.multiLine")).setDesc(t("settings.multiLineDesc")).addTextArea((textarea) => {
       textarea.setValue(this.plugin.settings.multiLineTemplate).onChange(async (value) => {
@@ -161,7 +161,7 @@ var NotePipeSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       });
       textarea.inputEl.rows = 2;
-      textarea.inputEl.style.width = "100%";
+      textarea.inputEl.addClass("notepipe-template-input");
     });
     const varRef = containerEl.createDiv({ cls: "setting-item-description" });
     varRef.createEl("strong", { text: t("settings.variableReference") });
@@ -405,17 +405,17 @@ var SharedFloatingButton = class {
     svg.setAttribute("stroke-width", "2");
     svg.setAttribute("stroke-linecap", "round");
     svg.setAttribute("stroke-linejoin", "round");
-    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", "9");
-    rect.setAttribute("y", "9");
-    rect.setAttribute("width", "13");
-    rect.setAttribute("height", "13");
-    rect.setAttribute("rx", "2");
-    rect.setAttribute("ry", "2");
-    svg.appendChild(rect);
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
-    svg.appendChild(path);
+    const svgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    svgRect.setAttribute("x", "9");
+    svgRect.setAttribute("y", "9");
+    svgRect.setAttribute("width", "13");
+    svgRect.setAttribute("height", "13");
+    svgRect.setAttribute("rx", "2");
+    svgRect.setAttribute("ry", "2");
+    svg.appendChild(svgRect);
+    const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    svgPath.setAttribute("d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
+    svg.appendChild(svgPath);
     btn.appendChild(svg);
     btn.addEventListener("mousedown", (e) => {
       e.preventDefault();
@@ -470,7 +470,7 @@ var FloatingButtonManager = class {
     const top = rect.top - 32;
     const left = rect.right + 4;
     this.button.show(top, left, () => {
-      this.plugin.copyGlobalContext();
+      void this.plugin.copyGlobalContext();
     });
   }
   forceUpdate() {
@@ -502,7 +502,7 @@ var CopyInterceptorPlugin = class {
         selection.to
       );
       if (selectedText.trim().length === 0) return;
-      this.plugin.copyGlobalContext();
+      void this.plugin.copyGlobalContext();
     }, 300);
   }
   update(update) {
@@ -530,7 +530,7 @@ function registerGlobalCopyInterceptor(plugin) {
     if (!activeView || activeView.getMode() !== "preview") {
       return;
     }
-    plugin.copyGlobalContext();
+    void plugin.copyGlobalContext();
   }, 300);
   globalSelectionHandler = () => {
     requestAnimationFrame(() => debouncedCopy());
@@ -562,8 +562,7 @@ var NotePipePlugin = class extends import_obsidian5.Plugin {
     this.addCommand({
       id: "copy-with-context",
       name: t("command.copyWithContext"),
-      editorCallback: (editor, view) => this.copyWithContext(editor, view),
-      hotkeys: this.settings.enableHotkey ? [{ modifiers: ["Mod", "Shift"], key: "c" }] : void 0
+      editorCallback: (editor, view) => this.copyWithContext(editor, view)
     });
     this.addCommand({
       id: "copy-with-context-global",
@@ -579,7 +578,7 @@ var NotePipePlugin = class extends import_obsidian5.Plugin {
       registerGlobalCopyInterceptor(this);
     }
   }
-  async onunload() {
+  onunload() {
     if (this.floatingButton) {
       this.floatingButton.deactivate();
     }
@@ -589,7 +588,8 @@ var NotePipePlugin = class extends import_obsidian5.Plugin {
   // 设置持久化
   // -----------------------------------------------------------------------
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const data = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
   }
   async saveSettings() {
     await this.saveData(this.settings);

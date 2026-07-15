@@ -46,9 +46,7 @@ class CopyInterceptorPlugin implements PluginValue {
             );
             if (selectedText.trim().length === 0) return;
 
-            // 使用 command dispatch 触发 copyWithContext
-            // 直接调用 plugin 方法避免循环触发
-            this.plugin.copyGlobalContext();
+            void this.plugin.copyGlobalContext();
         }, 300);
     }
 
@@ -97,7 +95,7 @@ export function registerGlobalCopyInterceptor(plugin: NotePipePlugin): void {
             return;
         }
 
-        plugin.copyGlobalContext();
+        void plugin.copyGlobalContext();
     }, 300);
 
     globalSelectionHandler = () => {

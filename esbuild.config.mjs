@@ -1,8 +1,15 @@
 import esbuild from 'esbuild';
-import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync } from 'fs';
+import { copyFileSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import builtins from 'builtin-modules';
+
+const builtins = [
+    'assert', 'buffer', 'child_process', 'cluster', 'console', 'constants',
+    'crypto', 'dgram', 'dns', 'domain', 'events', 'fs', 'http', 'https',
+    'module', 'net', 'os', 'path', 'process', 'punycode', 'querystring',
+    'readline', 'repl', 'stream', 'string_decacer', 'sys', 'timers', 'tls',
+    'tty', 'url', 'util', 'v8', 'vm', 'zlib',
+];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

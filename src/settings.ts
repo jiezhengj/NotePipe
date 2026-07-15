@@ -70,7 +70,7 @@ export class NotePipeSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
                 textarea.inputEl.rows = 2;
-                textarea.inputEl.style.width = '100%';
+                textarea.inputEl.addClass('notepipe-template-input');
             });
 
         new Setting(containerEl)
@@ -84,7 +84,7 @@ export class NotePipeSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
                 textarea.inputEl.rows = 2;
-                textarea.inputEl.style.width = '100%';
+                textarea.inputEl.addClass('notepipe-template-input');
             });
 
         // 变量参考

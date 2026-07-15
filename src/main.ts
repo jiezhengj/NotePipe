@@ -50,9 +50,6 @@ export default class NotePipePlugin extends Plugin {
             id: 'copy-with-context',
             name: t('command.copyWithContext'),
             editorCallback: (editor, view) => this.copyWithContext(editor, view),
-            hotkeys: this.settings.enableHotkey
-                ? [{ modifiers: ['Mod', 'Shift'], key: 'c' }]
-                : undefined,
         });
 
         // 注册命令（全局 — 阅读模式 / 文件列表等）
@@ -75,7 +72,7 @@ export default class NotePipePlugin extends Plugin {
         }
     }
 
-    async onunload(): Promise<void> {
+    onunload(): void {
         if (this.floatingButton) {
             this.floatingButton.deactivate();
         }
@@ -88,7 +85,8 @@ export default class NotePipePlugin extends Plugin {
     // -----------------------------------------------------------------------
 
     async loadSettings(): Promise<void> {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const data = await this.loadData() as Partial<NotePipeSettings>;
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
     }
 
     async saveSettings(): Promise<void> {
