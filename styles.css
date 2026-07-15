@@ -1,0 +1,81 @@
+/* NotePipe — Floating Button Styles */
+
+.notepipe-floating-btn {
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+}
+
+.notepipe-floating-btn.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.notepipe-floating-btn:hover {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-color: var(--interactive-accent);
+}
+
+.notepipe-floating-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 移动端：增大触控区域 */
+@media (hover: none) and (pointer: coarse) {
+    .notepipe-floating-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+    }
+
+    .notepipe-floating-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* 编辑模式内嵌按钮 (CodeMirror widget) */
+.notepipe-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin-left: 2px;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    cursor: pointer;
+    opacity: 0.85;
+    vertical-align: middle;
+    transition: opacity 0.1s ease;
+}
+
+.notepipe-copy-btn:hover {
+    opacity: 1;
+}
+
+.notepipe-copy-btn svg {
+    width: 12px;
+    height: 12px;
+}

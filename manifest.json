@@ -1,0 +1,11 @@
+{
+  "id": "notepipe",
+  "name": "NotePipe",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Copy text from Obsidian with file path and line number context, ready to paste into AI agent terminals.",
+  "author": "jiezhengj",
+  "authorUrl": "https://github.com/jiezhengj/NotePipe",
+  "fundingUrl": "",
+  "isDesktopOnly": false
+}
