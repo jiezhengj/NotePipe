@@ -22,7 +22,7 @@ import {
     renderTemplate,
     truncateSelection,
 } from './template-engine';
-import { FloatingButtonManager, createFloatingButtonExtension } from './floating-button';
+import { FloatingButtonManager } from './floating-button';
 import {
     copyInterceptorExtension,
     registerGlobalCopyInterceptor,
@@ -62,17 +62,9 @@ export default class NotePipePlugin extends Plugin {
             callback: () => this.copyGlobalContext(),
         });
 
-        // 浮层按钮：编辑模式（CM6 选区检测）+ 阅读模式（DOM mouseup）
+        // 浮层按钮：统一 DOM selectionchange 监听（编辑+阅读模式）
         if (this.settings.showFloatingButton) {
             this.floatingButton = new FloatingButtonManager(this);
-            // 编辑模式：CM6 检测选区 → 固定定位浮层
-            this.registerEditorExtension(
-                createFloatingButtonExtension(
-                    this.floatingButton.getSharedButton(),
-                    () => this.copyGlobalContext(),
-                ),
-            );
-            // 阅读模式：DOM mouseup 监听
             this.floatingButton.activate();
         }
 

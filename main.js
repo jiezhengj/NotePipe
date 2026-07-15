@@ -353,32 +353,47 @@ function truncateSelection(selection, maxBytes = 100 * 1024, truncationHint = ".
 }
 
 // src/floating-button.ts
-var import_view = require("@codemirror/view");
 var import_obsidian3 = require("obsidian");
 var SharedFloatingButton = class {
   constructor() {
     this.el = null;
+    this.hideTimer = null;
   }
   show(top, left, onClick) {
-    if (!this.el) {
-      this.el = this.createEl(onClick);
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = null;
     }
-    this.el.style.top = `${top}px`;
-    this.el.style.left = `${left}px`;
+    if (!this.el) {
+      this.el = this.createEl();
+    }
+    this.el.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick();
+      this.hide();
+    };
+    this.el.style.top = `${Math.max(4, top)}px`;
+    this.el.style.left = `${Math.max(4, left)}px`;
     this.el.classList.add("visible");
   }
   hide() {
-    if (this.el) {
-      this.el.classList.remove("visible");
-    }
+    this.hideTimer = setTimeout(() => {
+      if (this.el) {
+        this.el.classList.remove("visible");
+      }
+    }, 100);
   }
   remove() {
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer);
+    }
     if (this.el) {
       this.el.remove();
       this.el = null;
     }
   }
-  createEl(onClick) {
+  createEl() {
     const btn = document.createElement("button");
     btn.className = "notepipe-floating-btn";
     btn.title = t("floating.tooltip");
@@ -387,12 +402,6 @@ var SharedFloatingButton = class {
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
         </svg>`;
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      onClick();
-      this.hide();
-    });
     btn.addEventListener("mousedown", (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -401,83 +410,28 @@ var SharedFloatingButton = class {
     return btn;
   }
 };
-function selectionEndCoords(view) {
-  const pos = view.state.selection.main.to;
-  const coords = view.coordsAtPos(pos);
-  if (!coords) return null;
-  return {
-    top: coords.top - 32,
-    left: coords.right + 4
-  };
-}
-var EditorSelectionWatcher = class {
-  constructor(view, button, onClick) {
-    this.button = button;
-    this.onClick = onClick;
-    this.updateButton(view);
-  }
-  update(update) {
-    if (update.selectionSet || update.docChanged) {
-      this.updateButton(update.view);
-    }
-  }
-  updateButton(view) {
-    const sel = view.state.selection.main;
-    if (sel.empty) {
-      this.button.hide();
-      return;
-    }
-    const coords = selectionEndCoords(view);
-    if (!coords) {
-      this.button.hide();
-      return;
-    }
-    this.button.show(coords.top, coords.left, this.onClick);
-  }
-  destroy() {
-    this.button.hide();
-  }
-};
-function createFloatingButtonExtension(button, onClick) {
-  return import_view.ViewPlugin.define(
-    (view) => new EditorSelectionWatcher(view, button, onClick)
-  );
-}
 var FloatingButtonManager = class {
   constructor(plugin) {
     this.plugin = plugin;
     this.button = new SharedFloatingButton();
-    this.boundMouseUpHandler = this.onMouseUp.bind(this);
+    this.boundHandler = this.onSelectionChange.bind(this);
     this.boundScrollHandler = () => this.button.hide();
   }
-  /** 获取共享按钮实例（供 CM6 extension 使用） */
-  getSharedButton() {
-    return this.button;
-  }
   activate() {
-    document.addEventListener("mouseup", this.boundMouseUpHandler);
+    document.addEventListener("selectionchange", this.boundHandler);
     document.addEventListener("scroll", this.boundScrollHandler, { capture: true });
   }
   deactivate() {
-    document.removeEventListener("mouseup", this.boundMouseUpHandler);
+    document.removeEventListener("selectionchange", this.boundHandler);
     document.removeEventListener("scroll", this.boundScrollHandler, { capture: true });
-    this.button.hide();
     this.button.remove();
   }
   // -------------------------------------------------------------------
-  // 阅读模式事件处理
+  // 选区变化：编辑模式 + 阅读模式统一处理
   // -------------------------------------------------------------------
-  onMouseUp(_event) {
-    requestAnimationFrame(() => this.handleSelection());
-  }
-  handleSelection() {
+  onSelectionChange() {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !selection.toString().trim()) {
-      this.button.hide();
-      return;
-    }
-    const activeView = this.plugin.app.workspace.getActiveViewOfType(import_obsidian3.MarkdownView);
-    if (!activeView || activeView.getMode() !== "preview") {
       this.button.hide();
       return;
     }
@@ -486,8 +440,14 @@ var FloatingButtonManager = class {
       return;
     }
     const range = selection.getRangeAt(0);
-    const viewContainer = activeView.previewMode?.containerEl ?? activeView.containerEl;
-    if (!viewContainer.contains(range.commonAncestorContainer)) {
+    const activeView = this.plugin.app.workspace.getActiveViewOfType(import_obsidian3.MarkdownView);
+    if (!activeView) {
+      this.button.hide();
+      return;
+    }
+    const mode = activeView.getMode();
+    const viewContainer = mode === "preview" ? activeView.previewMode?.containerEl : activeView.containerEl;
+    if (!viewContainer || !viewContainer.contains(range.commonAncestorContainer)) {
       this.button.hide();
       return;
     }
@@ -498,16 +458,13 @@ var FloatingButtonManager = class {
       this.plugin.copyGlobalContext();
     });
   }
-  // -------------------------------------------------------------------
-  // 强制刷新
-  // -------------------------------------------------------------------
   forceUpdate() {
     this.button.hide();
   }
 };
 
 // src/copy-interceptor.ts
-var import_view2 = require("@codemirror/view");
+var import_view = require("@codemirror/view");
 var import_obsidian4 = require("obsidian");
 function debounce(fn, delay) {
   let timer = null;
@@ -542,7 +499,7 @@ var CopyInterceptorPlugin = class {
   }
 };
 function copyInterceptorExtension(plugin) {
-  return import_view2.ViewPlugin.define(
+  return import_view.ViewPlugin.define(
     (view) => new CopyInterceptorPlugin(view, plugin)
   );
 }
@@ -600,12 +557,6 @@ var NotePipePlugin = class extends import_obsidian5.Plugin {
     });
     if (this.settings.showFloatingButton) {
       this.floatingButton = new FloatingButtonManager(this);
-      this.registerEditorExtension(
-        createFloatingButtonExtension(
-          this.floatingButton.getSharedButton(),
-          () => this.copyGlobalContext()
-        )
-      );
       this.floatingButton.activate();
     }
     if (this.settings.enableAlwaysCopy) {

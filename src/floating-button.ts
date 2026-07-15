@@ -1,53 +1,66 @@
 /**
  * 浮层按钮管理器
  *
- * 编辑模式：CodeMirror 6 ViewPlugin 检测选区 → 用 coordsAtPos() 获取屏幕坐标 → 显示固定定位浮层。
- * 阅读模式：DOM mouseup 事件检测选区 → Selection.getBoundingClientRect() 定位。
- * 两种模式共用同一个 position:fixed 的 DOM 按钮，不影响文本流。
+ * 统一通过 DOM selectionchange 事件检测选区，position:fixed 浮层定位。
+ * 编辑模式和阅读模式共用同一按钮，不影响文本流。
  * 移动端适配：触控区域 ≥44px（CSS 中处理）。
  */
 
-import {
-    PluginValue,
-    EditorView,
-    ViewUpdate,
-    ViewPlugin,
-} from '@codemirror/view';
 import { MarkdownView } from 'obsidian';
 import type NotePipePlugin from './main';
 import { t } from './i18n';
 
 // ---------------------------------------------------------------------------
-// 共享浮层按钮（position: fixed，两种模式共用）
+// 共享浮层按钮
 // ---------------------------------------------------------------------------
 
 class SharedFloatingButton {
     private el: HTMLElement | null = null;
+    private hideTimer: ReturnType<typeof setTimeout> | null = null;
 
     show(top: number, left: number, onClick: () => void): void {
-        if (!this.el) {
-            this.el = this.createEl(onClick);
+        if (this.hideTimer) {
+            clearTimeout(this.hideTimer);
+            this.hideTimer = null;
         }
 
-        this.el.style.top = `${top}px`;
-        this.el.style.left = `${left}px`;
+        if (!this.el) {
+            this.el = this.createEl();
+        }
+
+        // 更新点击回调（阅读模式每次选区不同，需刷新回调）
+        this.el.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick();
+            this.hide();
+        };
+
+        this.el.style.top = `${Math.max(4, top)}px`;
+        this.el.style.left = `${Math.max(4, left)}px`;
         this.el.classList.add('visible');
     }
 
     hide(): void {
-        if (this.el) {
-            this.el.classList.remove('visible');
-        }
+        // 延迟隐藏，避免在快速连续选区间闪烁
+        this.hideTimer = setTimeout(() => {
+            if (this.el) {
+                this.el.classList.remove('visible');
+            }
+        }, 100);
     }
 
     remove(): void {
+        if (this.hideTimer) {
+            clearTimeout(this.hideTimer);
+        }
         if (this.el) {
             this.el.remove();
             this.el = null;
         }
     }
 
-    private createEl(onClick: () => void): HTMLElement {
+    private createEl(): HTMLElement {
         const btn = document.createElement('button');
         btn.className = 'notepipe-floating-btn';
         btn.title = t('floating.tooltip');
@@ -58,14 +71,6 @@ class SharedFloatingButton {
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
         </svg>`;
 
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onClick();
-            this.hide();
-        });
-
-        // mousedown 时阻止默认行为，防止编辑器失焦
         btn.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -77,127 +82,40 @@ class SharedFloatingButton {
 }
 
 // ---------------------------------------------------------------------------
-// 编辑模式：CM6 ViewPlugin（仅检测选区，不创建 widget）
-// ---------------------------------------------------------------------------
-
-/**
- * 基于 CM6 坐标计算浮层位置。
- * 按钮出现在选区末尾的右上方，不遮挡后续文字。
- */
-function selectionEndCoords(view: EditorView): { top: number; left: number } | null {
-    const pos = view.state.selection.main.to;
-    const coords = view.coordsAtPos(pos);
-    if (!coords) return null;
-    // 放在选区末尾右上方
-    return {
-        top: coords.top - 32,
-        left: coords.right + 4,
-    };
-}
-
-class EditorSelectionWatcher implements PluginValue {
-    private button: SharedFloatingButton;
-    private onClick: () => void;
-
-    constructor(view: EditorView, button: SharedFloatingButton, onClick: () => void) {
-        this.button = button;
-        this.onClick = onClick;
-        this.updateButton(view);
-    }
-
-    update(update: ViewUpdate): void {
-        if (update.selectionSet || update.docChanged) {
-            this.updateButton(update.view);
-        }
-    }
-
-    private updateButton(view: EditorView): void {
-        const sel = view.state.selection.main;
-        if (sel.empty) {
-            this.button.hide();
-            return;
-        }
-        const coords = selectionEndCoords(view);
-        if (!coords) {
-            this.button.hide();
-            return;
-        }
-        this.button.show(coords.top, coords.left, this.onClick);
-    }
-
-    destroy(): void {
-        this.button.hide();
-    }
-}
-
-/**
- * 创建编辑模式浮层按钮的 CM6 Extension。
- * 不产生任何 decorations，仅监听选区变化并驱动固定定位浮层。
- */
-export function createFloatingButtonExtension(
-    button: SharedFloatingButton,
-    onClick: () => void,
-) {
-    return ViewPlugin.define(
-        (view) => new EditorSelectionWatcher(view, button, onClick),
-    );
-}
-
-// ---------------------------------------------------------------------------
-// 浮层按钮管理器（生命周期 + 阅读模式）
+// 浮层按钮管理器
 // ---------------------------------------------------------------------------
 
 export class FloatingButtonManager {
     private plugin: NotePipePlugin;
     private button: SharedFloatingButton;
-    private boundMouseUpHandler: (event: MouseEvent) => void;
+    private boundHandler: () => void;
     private boundScrollHandler: () => void;
 
     constructor(plugin: NotePipePlugin) {
         this.plugin = plugin;
         this.button = new SharedFloatingButton();
-        this.boundMouseUpHandler = this.onMouseUp.bind(this);
+        this.boundHandler = this.onSelectionChange.bind(this);
         this.boundScrollHandler = () => this.button.hide();
     }
 
-    /** 获取共享按钮实例（供 CM6 extension 使用） */
-    getSharedButton(): SharedFloatingButton {
-        return this.button;
-    }
-
     activate(): void {
-        // 阅读模式：DOM mouseup 监听
-        document.addEventListener('mouseup', this.boundMouseUpHandler);
-        // 滚动时隐藏浮层
+        document.addEventListener('selectionchange', this.boundHandler);
         document.addEventListener('scroll', this.boundScrollHandler, { capture: true });
     }
 
     deactivate(): void {
-        document.removeEventListener('mouseup', this.boundMouseUpHandler);
+        document.removeEventListener('selectionchange', this.boundHandler);
         document.removeEventListener('scroll', this.boundScrollHandler, { capture: true });
-        this.button.hide();
         this.button.remove();
     }
 
     // -------------------------------------------------------------------
-    // 阅读模式事件处理
+    // 选区变化：编辑模式 + 阅读模式统一处理
     // -------------------------------------------------------------------
 
-    private onMouseUp(_event: MouseEvent): void {
-        // 延迟执行，确保 selection 已更新
-        requestAnimationFrame(() => this.handleSelection());
-    }
-
-    private handleSelection(): void {
+    private onSelectionChange(): void {
         const selection = window.getSelection();
         if (!selection || selection.isCollapsed || !selection.toString().trim()) {
-            this.button.hide();
-            return;
-        }
-
-        const activeView =
-            this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!activeView || activeView.getMode() !== 'preview') {
             this.button.hide();
             return;
         }
@@ -208,11 +126,22 @@ export class FloatingButtonManager {
         }
 
         const range = selection.getRangeAt(0);
-        const viewContainer =
-            activeView.previewMode?.containerEl ??
-            activeView.containerEl;
 
-        if (!viewContainer.contains(range.commonAncestorContainer)) {
+        // 判断场景：编辑模式 or 阅读模式
+        const activeView =
+            this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!activeView) {
+            this.button.hide();
+            return;
+        }
+
+        const mode = activeView.getMode();
+        const viewContainer =
+            mode === 'preview'
+                ? activeView.previewMode?.containerEl
+                : activeView.containerEl;
+
+        if (!viewContainer || !viewContainer.contains(range.commonAncestorContainer)) {
             this.button.hide();
             return;
         }
@@ -226,10 +155,6 @@ export class FloatingButtonManager {
             this.plugin.copyGlobalContext();
         });
     }
-
-    // -------------------------------------------------------------------
-    // 强制刷新
-    // -------------------------------------------------------------------
 
     forceUpdate(): void {
         this.button.hide();
