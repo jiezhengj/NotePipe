@@ -2,17 +2,23 @@
 
 [English](#english) | [中文](#中文)
 
-<p align="center">
-  <img src="docs/NotePipe01.png" width="60%" alt="Floating copy button in Obsidian" />
-  <br/>
-  <img src="docs/NotePipe02.png" width="60%" alt="Pasted output in terminal" />
-</p>
+![Floating copy button in Obsidian](docs/NotePipe01.png)
+
+![Pasted output in terminal](docs/NotePipe02.png)
 
 ---
 
 ## English
 
 One-click copy from Obsidian with file path and line number context — paste directly into AI agent terminals (Claude Code, etc.).
+
+### Background
+
+In desktop GUI AI agent tools, it's very convenient to select a piece of text or code in a document on the side of the window and add it directly to the chat box for discussion.
+
+However, when using CLI-based agent tools in the terminal, it's not as seamless. I often found myself having to copy the document path first, and then copy the specific text content separately.
+
+That's why I created this Obsidian plugin. When you select text in Obsidian and copy it via this plugin, it automatically attaches the file path and line number information, ready to be pasted directly into the terminal.
 
 ### Preview
 
@@ -31,7 +37,7 @@ Select text → click the floating button → paste into terminal. The output us
 
 ### Install
 
-**Community plugin marketplace** — search "NotePipe" → Install → Enable.
+Open Obsidian and go to **Community plugin marketplace** — search "NotePipe" → Install → Enable.
 
 Or manually:
 
@@ -119,6 +125,12 @@ MIT
 
 在 Obsidian 中选中文本，一键复制为 `path:line` 格式，直接粘贴到 AI 终端（如 Claude Code）。
 
+### 背景
+
+在桌面版的 Agent 工具里，我可以很方便地在窗口右侧的文档里，选择一段文本/代码，添加到与 Agent 对话的对话框里，进行讨论。
+
+但是如果用终端里的 CLI 版本的 Agent 工具，就没那么方便了，我经常要先复制文档路径，再复制具体内容文本。所以我做了这个 Obsidian 插件，在 Obsidian 里选中文本，再通过这个插件复制粘贴，到终端里就自动带上路径和行号的定位信息。
+
 ### 预览
 
 选中文本 → 点击浮层按钮 → 粘贴到终端。输出采用 Markdown 引用块格式（`>` 前缀），AI 可以清晰区分引用内容和你的提问。
@@ -136,7 +148,7 @@ MIT
 
 ### 安装
 
-**社区插件市场** — 搜索 "NotePipe" → 安装 → 启用。
+打开 Obsidian 进入 **社区插件市场** — 搜索 "NotePipe" → 安装 → 启用。
 
 或手动安装：
 
