@@ -10,6 +10,8 @@
 
 ## English
 
+https://community.obsidian.md/plugins/notepipe
+
 One-click copy from Obsidian with file path and line number context — paste directly into AI agent terminals (Claude Code, etc.).
 
 ### Background
@@ -122,6 +124,8 @@ MIT
 ---
 
 ## 中文
+
+https://community.obsidian.md/plugins/notepipe
 
 在 Obsidian 中选中文本，一键复制为 `path:line` 格式，直接粘贴到 AI 终端（如 Claude Code）。
 
