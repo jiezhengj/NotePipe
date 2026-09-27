@@ -2,7 +2,12 @@
  * 设置接口、默认值、设置标签页。
  */
 
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import {
+    App,
+    PluginSettingTab,
+    Setting,
+} from 'obsidian';
+import type { SettingDefinitionItem } from 'obsidian';
 import type NotePipePlugin from './main';
 import { t } from './i18n';
 import type { PathStyle } from './context-resolver';
@@ -44,6 +49,99 @@ export class NotePipeSettingTab extends PluginSettingTab {
     constructor(app: App, plugin: NotePipePlugin) {
         super(app, plugin);
         this.plugin = plugin;
+    }
+
+    /**
+     * Declarative definitions make these settings searchable in Obsidian 1.13+.
+     * display() below remains as the compatibility fallback for older versions.
+     */
+    getSettingDefinitions(): SettingDefinitionItem[] {
+        const vars = [
+            '{{path}}', '{{fileName}}', '{{startLine}}', '{{endLine}}',
+            '{{selection}}', '{{lines}}', '{{folder}}',
+        ];
+
+        return [
+            {
+                type: 'group',
+                heading: t('settings.templates'),
+                items: [
+                    {
+                        name: t('settings.singleLine'),
+                        desc: t('settings.singleLineDesc'),
+                        control: {
+                            type: 'textarea',
+                            key: 'singleLineTemplate',
+                            rows: 2,
+                        },
+                    },
+                    {
+                        name: t('settings.multiLine'),
+                        desc: t('settings.multiLineDesc'),
+                        control: {
+                            type: 'textarea',
+                            key: 'multiLineTemplate',
+                            rows: 2,
+                        },
+                    },
+                    {
+                        name: t('settings.variableReference'),
+                        desc: vars.join('  '),
+                        searchable: false,
+                    },
+                ],
+            },
+            {
+                type: 'group',
+                heading: t('settings.path'),
+                items: [
+                    {
+                        name: t('settings.pathStyle'),
+                        desc: t('settings.pathStyleDesc'),
+                        control: {
+                            type: 'dropdown',
+                            key: 'pathStyle',
+                            options: {
+                                absolute: t('settings.pathAbsolute'),
+                                'vault-relative': t('settings.pathVaultRelative'),
+                            },
+                        },
+                    },
+                ],
+            },
+            {
+                type: 'group',
+                heading: t('settings.triggers'),
+                items: [
+                    {
+                        name: t('settings.showFloatingButton'),
+                        desc: t('settings.showFloatingButtonDesc'),
+                        control: {
+                            type: 'toggle',
+                            key: 'showFloatingButton',
+                        },
+                    },
+                ],
+            },
+            {
+                type: 'group',
+                heading: t('settings.advanced'),
+                items: [
+                    {
+                        name: t('settings.alwaysCopyWarning'),
+                        searchable: false,
+                    },
+                    {
+                        name: t('settings.alwaysCopy'),
+                        desc: t('settings.alwaysCopyDesc'),
+                        control: {
+                            type: 'toggle',
+                            key: 'enableAlwaysCopy',
+                        },
+                    },
+                ],
+            },
+        ];
     }
 
     display(): void {

@@ -30,3 +30,19 @@ If a verified Reference update is available, run the exact hash-bound `auto-upgr
 A missing source, unclean source, invalid verification, offline check, or timeout is non-blocking in normal project work and must not be presented as an available update.
 
 <!-- PROJECT-SPEC-KIT-REFERENCE-UPDATE-CHECK:END -->
+
+# Obsidian release and review rules
+
+- `main.js` is generated release output. The repository must not track it; run
+  `npm run build` when a local bundle is needed.
+- Every published release must attach `main.js`, `manifest.json`, and the tracked
+  `styles.css` file directly to the GitHub Release. Before publishing, run
+  `npm run release:prepare` and, when a tag is known, run
+  `npm run validate-release -- --tag <version>`.
+- `package.json`, `manifest.json`, and `versions.json` must contain the same plugin
+  version. Do not move an existing published tag to a different commit; use the
+  next patch version for a release fix.
+- Obsidian UI code must use Obsidian's `createEl`/`createSvg` helpers instead of raw
+  `document.createElement` or `createElementNS`. A `PluginSettingTab` must implement
+  `getSettingDefinitions()` for Obsidian 1.13+ and retain `display()` when the
+  manifest supports older Obsidian versions.

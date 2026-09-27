@@ -75,7 +75,8 @@ class SharedFloatingButton {
 
     remove(): void {
         if (this.hideTimer) {
-            window.clearTimeout(this.hideTimer);
+            this.ownerWindow.clearTimeout(this.hideTimer);
+            this.hideTimer = null;
         }
         if (this.el) {
             this.el.remove();
@@ -84,41 +85,47 @@ class SharedFloatingButton {
     }
 
     private createEl(): HTMLElement {
-        const btn = this.ownerDocument.createElement('button');
-        btn.className = 'notepipe-floating-btn';
-        btn.title = t('floating.tooltip');
-        btn.setAttribute('aria-label', t('floating.tooltip'));
+        const tooltip = t('floating.tooltip');
+        const btn = this.ownerDocument.body.createEl('button', {
+            cls: 'notepipe-floating-btn',
+            title: tooltip,
+            attr: { 'aria-label': tooltip },
+        });
 
-        // 使用 DOM API 创建 SVG 图标
-        const svg = this.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('fill', 'none');
-        svg.setAttribute('stroke', 'currentColor');
-        svg.setAttribute('stroke-width', '2');
-        svg.setAttribute('stroke-linecap', 'round');
-        svg.setAttribute('stroke-linejoin', 'round');
+        // Use Obsidian's DOM helpers so the button works in popout documents.
+        const svg = btn.createSvg('svg', {
+            attr: {
+                viewBox: '0 0 24 24',
+                fill: 'none',
+                stroke: 'currentColor',
+                'stroke-width': '2',
+                'stroke-linecap': 'round',
+                'stroke-linejoin': 'round',
+            },
+        });
 
-        const svgRect = this.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        svgRect.setAttribute('x', '9');
-        svgRect.setAttribute('y', '9');
-        svgRect.setAttribute('width', '13');
-        svgRect.setAttribute('height', '13');
-        svgRect.setAttribute('rx', '2');
-        svgRect.setAttribute('ry', '2');
-        svg.appendChild(svgRect);
+        svg.createSvg('rect', {
+            attr: {
+                x: '9',
+                y: '9',
+                width: '13',
+                height: '13',
+                rx: '2',
+                ry: '2',
+            },
+        });
 
-        const svgPath = this.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-        svgPath.setAttribute('d', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1');
-        svg.appendChild(svgPath);
-
-        btn.appendChild(svg);
+        svg.createSvg('path', {
+            attr: {
+                d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1',
+            },
+        });
 
         btn.addEventListener('mousedown', (e: MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
         });
 
-        this.ownerDocument.body.appendChild(btn);
         return btn;
     }
 }
