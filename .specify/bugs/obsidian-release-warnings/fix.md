@@ -21,10 +21,10 @@ the legacy rendering fallback.
 | `src/floating-button.ts` | modified | Replaces raw DOM factories and uses the owner window for timeout cleanup. |
 | `src/settings.ts` | modified | Adds `getSettingDefinitions()` and preserves `display()` for older Obsidian versions. |
 | `tools/validate-release.mjs` | added | Checks versions, tag alignment, required assets, and release manifest contents. |
-| `package.json` | modified | Bumps to `0.1.4` and adds release preparation/validation scripts. |
-| `package-lock.json` | modified | Keeps the lockfile root version at `0.1.4`. |
-| `manifest.json` | modified | Bumps plugin version to `0.1.4`. |
-| `versions.json` | modified | Adds the `0.1.4` minimum-version entry. |
+| `package.json` | modified | Adds release scripts, then updates the final patch release to `0.1.5` and aligns esbuild with Vitest's Vite peer. |
+| `package-lock.json` | modified | Keeps the lockfile root version at `0.1.5` and records esbuild `0.28.2` for clean CI installs. |
+| `manifest.json` | modified | Bumps the final plugin version to `0.1.5`. |
+| `versions.json` | modified | Adds the `0.1.4` and `0.1.5` minimum-version entries. |
 | `main.js` | removed from Git | Remains available after a local build but is no longer committed. |
 
 # Tests Added or Updated
@@ -42,6 +42,8 @@ the legacy rendering fallback.
   validation succeeded for `main.js`, `manifest.json`, and `styles.css`.
 - `npm run validate-release -- --tag 0.1.3` → expected failure; the validator
   rejected the tag/version mismatch.
+- `npm ci --ignore-scripts --no-audit` → pass after aligning esbuild to `0.28.2`;
+  this reproduces the clean-install path used by GitHub Actions.
 - `npm audit --omit=optional` → pass, 0 vulnerabilities.
 - `rg -n "createElement|createElementNS" src` → no matches.
 - `git diff --check` → pass.
@@ -49,12 +51,20 @@ the legacy rendering fallback.
 
 # Deviations from Assessment
 
-- The published `0.1.3` tag is not moved. The fixed release uses `0.1.4` so the
-  source commit and uploaded assets remain immutable and consistent.
+- The published `0.1.3` and `0.1.4` tags are not moved. `0.1.4` contains the
+  source/release-asset fixes; `0.1.5` also contains the CI dependency correction.
 - The existing imperative settings UI was retained as a fallback because the
   manifest still supports Obsidian versions below 1.13.0.
 
+# Post-release automation correction
+
+The first `0.1.4` workflow run failed at `npm ci` because the lockfile did not
+contain a peer-compatible esbuild for the Vite version selected by Vitest. The
+dependency range and lockfile now use esbuild `0.28.2`; the corrected automation
+will be verified by the `0.1.5` release workflow.
+
 # Follow-ups
 
-- Push the commit and tag `0.1.4` with `gh`/Git transport.
-- Publish release `0.1.4` and verify that the workflow uploads all three assets.
+- Push the dependency correction and tag `0.1.5` with `gh`/Git transport.
+- Publish release `0.1.5` and verify that its workflow completes and uploads all
+  three assets.
