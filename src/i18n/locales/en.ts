@@ -31,8 +31,6 @@ export default {
     'settings.triggers': 'Triggers',
     'settings.showFloatingButton': 'Show floating button',
     'settings.showFloatingButtonDesc': 'Show a floating copy button when text is selected.',
-    'settings.enableHotkey': 'Enable hotkey',
-    'settings.enableHotkeyDesc': 'Enable Ctrl+Shift+C / Cmd+Shift+C shortcut.',
     'settings.advanced': 'Advanced',
     'settings.alwaysCopy': 'Always copy mode (experimental)',
     'settings.alwaysCopyDesc': 'Automatically copy with context on every text selection. May cause performance issues.',

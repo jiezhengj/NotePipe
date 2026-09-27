@@ -21,7 +21,6 @@ export interface NotePipeSettings {
 
     // 触发选项
     showFloatingButton: boolean;
-    enableHotkey: boolean;
 
     // 始终复制模式（实验性）
     enableAlwaysCopy: boolean;
@@ -32,7 +31,6 @@ export const DEFAULT_SETTINGS: NotePipeSettings = {
     multiLineTemplate: '> {{path}}:{{startLine}}-{{endLine}}\n> {{selection}}',
     pathStyle: 'absolute',
     showFloatingButton: true,
-    enableHotkey: true,
     enableAlwaysCopy: false,
 };
 
@@ -127,18 +125,6 @@ export class NotePipeSettingTab extends PluginSettingTab {
                         this.plugin.settings.showFloatingButton = value;
                         await this.plugin.saveSettings();
                         // 动态启用/禁用浮层按钮需要重新加载插件
-                    });
-            });
-
-        new Setting(containerEl)
-            .setName(t('settings.enableHotkey'))
-            .setDesc(t('settings.enableHotkeyDesc'))
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(this.plugin.settings.enableHotkey)
-                    .onChange(async (value) => {
-                        this.plugin.settings.enableHotkey = value;
-                        await this.plugin.saveSettings();
                     });
             });
 

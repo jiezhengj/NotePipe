@@ -15,7 +15,6 @@ import { NotePipeSettings, DEFAULT_SETTINGS, NotePipeSettingTab } from './settin
 import {
     resolveContext,
     formatPath,
-    resolveFileExplorerContext,
 } from './context-resolver';
 import {
     buildTemplateContext,
@@ -123,13 +122,6 @@ export default class NotePipePlugin extends Plugin {
      * 全局复制（阅读模式 / 文件列表 / 编辑模式浮层按钮点击等场景）。
      */
     async copyGlobalContext(): Promise<void> {
-        // 优先检测文件列表
-        const fileListContext = resolveFileExplorerContext();
-        if (fileListContext) {
-            await this.copyFileList(fileListContext.files!);
-            return;
-        }
-
         // 检测编辑模式（浮层按钮点击时无 editor 参数，需手动获取）
         const activeView =
             this.app.workspace.getActiveViewOfType(MarkdownView);

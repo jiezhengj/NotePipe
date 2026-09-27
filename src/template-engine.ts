@@ -52,16 +52,22 @@ export function buildTemplateContext(
  * `\n` 字面量在渲染时转换为实际换行符。
  */
 export function renderTemplate(template: string, context: TemplateContext): string {
+    // Convert escapes in the template before inserting user-controlled values.
+    // Callback replacements keep `$`, backslashes, and other characters literal.
+    const formattedSelection = context.selection
+        ? context.selection.replace(/\n/g, '\n> ')
+        : '';
+
     return template
-        .replace(/\{\{path\}\}/g, context.path)
-        .replace(/\{\{fileName\}\}/g, context.fileName)
-        .replace(/\{\{startLine\}\}/g, context.startLine?.toString() ?? '')
-        .replace(/\{\{endLine\}\}/g, context.endLine?.toString() ?? '')
+        .replace(/\\n/g, '\n')
+        .replace(/\{\{path\}\}/g, () => context.path)
+        .replace(/\{\{fileName\}\}/g, () => context.fileName)
+        .replace(/\{\{startLine\}\}/g, () => context.startLine?.toString() ?? '')
+        .replace(/\{\{endLine\}\}/g, () => context.endLine?.toString() ?? '')
         // 选中文本每行换行后加统一前缀，方便直接拼接
-        .replace(/\{\{selection\}\}/g, context.selection ? context.selection.replace(/\n/g, '\n> ') : '')
-        .replace(/\{\{lines\}\}/g, context.lines)
-        .replace(/\{\{folder\}\}/g, context.folder)
-        .replace(/\\n/g, '\n');
+        .replace(/\{\{selection\}\}/g, () => formattedSelection)
+        .replace(/\{\{lines\}\}/g, () => context.lines)
+        .replace(/\{\{folder\}\}/g, () => context.folder);
 }
 
 /**
@@ -75,8 +81,8 @@ export function truncateSelection(
     maxBytes: number = 100 * 1024,
     truncationHint: string = '... (truncated)',
 ): string {
-    // 快速路径：多数情况下选区较小
-    if (selection.length < maxBytes) return selection;
+    // 快速路径：多数情况下选区较小。Use encoded bytes, not UTF-16 code units.
+    if (new TextEncoder().encode(selection).length <= maxBytes) return selection;
 
     // 逐字符截断以正确处理多字节 Unicode
     let bytes = 0;

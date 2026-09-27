@@ -61,8 +61,6 @@ var en_default = {
   "settings.triggers": "Triggers",
   "settings.showFloatingButton": "Show floating button",
   "settings.showFloatingButtonDesc": "Show a floating copy button when text is selected.",
-  "settings.enableHotkey": "Enable hotkey",
-  "settings.enableHotkeyDesc": "Enable Ctrl+Shift+C / Cmd+Shift+C shortcut.",
   "settings.advanced": "Advanced",
   "settings.alwaysCopy": "Always copy mode (experimental)",
   "settings.alwaysCopyDesc": "Automatically copy with context on every text selection. May cause performance issues.",
@@ -100,8 +98,6 @@ var zh_default = {
   "settings.triggers": "\u89E6\u53D1\u65B9\u5F0F",
   "settings.showFloatingButton": "\u663E\u793A\u6D6E\u5C42\u6309\u94AE",
   "settings.showFloatingButtonDesc": "\u9009\u4E2D\u6587\u672C\u65F6\u663E\u793A\u6D6E\u5C42\u590D\u5236\u6309\u94AE\u3002",
-  "settings.enableHotkey": "\u542F\u7528\u5FEB\u6377\u952E",
-  "settings.enableHotkeyDesc": "\u542F\u7528 Ctrl+Shift+C / Cmd+Shift+C \u5FEB\u6377\u952E\u3002",
   "settings.advanced": "\u9AD8\u7EA7",
   "settings.alwaysCopy": "\u59CB\u7EC8\u590D\u5236\u6A21\u5F0F\uFF08\u5B9E\u9A8C\u6027\uFF09",
   "settings.alwaysCopyDesc": "\u6BCF\u6B21\u9009\u4E2D\u6587\u672C\u65F6\u81EA\u52A8\u9644\u5E26\u4E0A\u4E0B\u6587\u590D\u5236\u3002\u53EF\u80FD\u5BFC\u81F4\u6027\u80FD\u95EE\u9898\u3002",
@@ -131,7 +127,6 @@ var DEFAULT_SETTINGS = {
   multiLineTemplate: "> {{path}}:{{startLine}}-{{endLine}}\n> {{selection}}",
   pathStyle: "absolute",
   showFloatingButton: true,
-  enableHotkey: true,
   enableAlwaysCopy: false
 };
 var NotePipeSettingTab = class extends import_obsidian.PluginSettingTab {
@@ -187,12 +182,6 @@ var NotePipeSettingTab = class extends import_obsidian.PluginSettingTab {
     new import_obsidian.Setting(containerEl).setName(t("settings.showFloatingButton")).setDesc(t("settings.showFloatingButtonDesc")).addToggle((toggle) => {
       toggle.setValue(this.plugin.settings.showFloatingButton).onChange(async (value) => {
         this.plugin.settings.showFloatingButton = value;
-        await this.plugin.saveSettings();
-      });
-    });
-    new import_obsidian.Setting(containerEl).setName(t("settings.enableHotkey")).setDesc(t("settings.enableHotkeyDesc")).addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.enableHotkey).onChange(async (value) => {
-        this.plugin.settings.enableHotkey = value;
         await this.plugin.saveSettings();
       });
     });
@@ -337,10 +326,11 @@ function buildTemplateContext(path, selection, startLine, endLine) {
   return { path, fileName, startLine, endLine, selection, lines, folder };
 }
 function renderTemplate(template, context) {
-  return template.replace(/\{\{path\}\}/g, context.path).replace(/\{\{fileName\}\}/g, context.fileName).replace(/\{\{startLine\}\}/g, context.startLine?.toString() ?? "").replace(/\{\{endLine\}\}/g, context.endLine?.toString() ?? "").replace(/\{\{selection\}\}/g, context.selection ? context.selection.replace(/\n/g, "\n> ") : "").replace(/\{\{lines\}\}/g, context.lines).replace(/\{\{folder\}\}/g, context.folder).replace(/\\n/g, "\n");
+  const formattedSelection = context.selection ? context.selection.replace(/\n/g, "\n> ") : "";
+  return template.replace(/\\n/g, "\n").replace(/\{\{path\}\}/g, () => context.path).replace(/\{\{fileName\}\}/g, () => context.fileName).replace(/\{\{startLine\}\}/g, () => context.startLine?.toString() ?? "").replace(/\{\{endLine\}\}/g, () => context.endLine?.toString() ?? "").replace(/\{\{selection\}\}/g, () => formattedSelection).replace(/\{\{lines\}\}/g, () => context.lines).replace(/\{\{folder\}\}/g, () => context.folder);
 }
 function truncateSelection(selection, maxBytes = 100 * 1024, truncationHint = "... (truncated)") {
-  if (selection.length < maxBytes) return selection;
+  if (new TextEncoder().encode(selection).length <= maxBytes) return selection;
   let bytes = 0;
   let charCount = 0;
   for (const char of selection) {
@@ -354,14 +344,34 @@ function truncateSelection(selection, maxBytes = 100 * 1024, truncationHint = ".
 
 // src/floating-button.ts
 var import_obsidian3 = require("obsidian");
+
+// src/floating-position.ts
+function clampFloatingButtonPosition(top, left, buttonWidth, buttonHeight, viewportWidth, viewportHeight) {
+  const margin = 4;
+  const maxLeft = Math.max(margin, viewportWidth - buttonWidth - margin);
+  const maxTop = Math.max(margin, viewportHeight - buttonHeight - margin);
+  return {
+    top: Math.min(Math.max(margin, top), maxTop),
+    left: Math.min(Math.max(margin, left), maxLeft)
+  };
+}
+
+// src/floating-button.ts
 var SharedFloatingButton = class {
   constructor() {
     this.el = null;
     this.hideTimer = null;
+    this.ownerDocument = document;
+    this.ownerWindow = window;
   }
-  show(top, left, onClick) {
+  show(top, left, onClick, ownerDocument) {
+    if (ownerDocument !== this.ownerDocument) {
+      this.remove();
+      this.ownerDocument = ownerDocument;
+      this.ownerWindow = ownerDocument.defaultView ?? window;
+    }
     if (this.hideTimer) {
-      window.clearTimeout(this.hideTimer);
+      this.ownerWindow.clearTimeout(this.hideTimer);
       this.hideTimer = null;
     }
     if (!this.el) {
@@ -373,12 +383,21 @@ var SharedFloatingButton = class {
       onClick();
       this.hide();
     };
-    this.el.style.top = `${Math.max(4, top)}px`;
-    this.el.style.left = `${Math.max(4, left)}px`;
+    const rect = this.el.getBoundingClientRect();
+    const position = clampFloatingButtonPosition(
+      top,
+      left,
+      rect.width || this.el.offsetWidth || 32,
+      rect.height || this.el.offsetHeight || 32,
+      this.ownerWindow.innerWidth,
+      this.ownerWindow.innerHeight
+    );
+    this.el.style.top = `${position.top}px`;
+    this.el.style.left = `${position.left}px`;
     this.el.classList.add("visible");
   }
   hide() {
-    this.hideTimer = window.setTimeout(() => {
+    this.hideTimer = this.ownerWindow.setTimeout(() => {
       if (this.el) {
         this.el.classList.remove("visible");
       }
@@ -394,18 +413,18 @@ var SharedFloatingButton = class {
     }
   }
   createEl() {
-    const btn = document.createElement("button");
+    const btn = this.ownerDocument.createElement("button");
     btn.className = "notepipe-floating-btn";
     btn.title = t("floating.tooltip");
     btn.setAttribute("aria-label", t("floating.tooltip"));
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const svg = this.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("fill", "none");
     svg.setAttribute("stroke", "currentColor");
     svg.setAttribute("stroke-width", "2");
     svg.setAttribute("stroke-linecap", "round");
     svg.setAttribute("stroke-linejoin", "round");
-    const svgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    const svgRect = this.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "rect");
     svgRect.setAttribute("x", "9");
     svgRect.setAttribute("y", "9");
     svgRect.setAttribute("width", "13");
@@ -413,7 +432,7 @@ var SharedFloatingButton = class {
     svgRect.setAttribute("rx", "2");
     svgRect.setAttribute("ry", "2");
     svg.appendChild(svgRect);
-    const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const svgPath = this.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "path");
     svgPath.setAttribute("d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
     svg.appendChild(svgPath);
     btn.appendChild(svg);
@@ -421,31 +440,52 @@ var SharedFloatingButton = class {
       e.preventDefault();
       e.stopPropagation();
     });
-    document.body.appendChild(btn);
+    this.ownerDocument.body.appendChild(btn);
     return btn;
   }
 };
 var FloatingButtonManager = class {
   constructor(plugin) {
+    this.observedDocuments = /* @__PURE__ */ new Set();
     this.plugin = plugin;
     this.button = new SharedFloatingButton();
     this.boundHandler = this.onSelectionChange.bind(this);
     this.boundScrollHandler = () => this.button.hide();
   }
   activate() {
-    document.addEventListener("selectionchange", this.boundHandler);
-    document.addEventListener("scroll", this.boundScrollHandler, { capture: true });
+    this.observeDocument(document);
+    this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+      this.observeDocument(leaf.view.containerEl.ownerDocument);
+    });
+    this.plugin.registerEvent(
+      this.plugin.app.workspace.on("layout-change", () => {
+        this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+          this.observeDocument(leaf.view.containerEl.ownerDocument);
+        });
+      })
+    );
   }
   deactivate() {
-    document.removeEventListener("selectionchange", this.boundHandler);
-    document.removeEventListener("scroll", this.boundScrollHandler, { capture: true });
+    for (const observedDocument of this.observedDocuments) {
+      observedDocument.removeEventListener("selectionchange", this.boundHandler);
+      observedDocument.removeEventListener("scroll", this.boundScrollHandler, { capture: true });
+    }
+    this.observedDocuments.clear();
     this.button.remove();
+  }
+  observeDocument(ownerDocument) {
+    if (this.observedDocuments.has(ownerDocument)) return;
+    ownerDocument.addEventListener("selectionchange", this.boundHandler);
+    ownerDocument.addEventListener("scroll", this.boundScrollHandler, { capture: true });
+    this.observedDocuments.add(ownerDocument);
   }
   // -------------------------------------------------------------------
   // 选区变化：编辑模式 + 阅读模式统一处理
   // -------------------------------------------------------------------
-  onSelectionChange() {
-    const selection = window.getSelection();
+  onSelectionChange(event) {
+    const eventDocument = event.currentTarget;
+    const selectionDocument = eventDocument?.nodeType === 9 ? eventDocument : document;
+    const selection = selectionDocument.getSelection();
     if (!selection || selection.isCollapsed || !selection.toString().trim()) {
       this.button.hide();
       return;
@@ -469,9 +509,15 @@ var FloatingButtonManager = class {
     const rect = range.getBoundingClientRect();
     const top = rect.top - 32;
     const left = rect.right + 4;
-    this.button.show(top, left, () => {
-      void this.plugin.copyGlobalContext();
-    });
+    const ownerDocument = range.commonAncestorContainer.ownerDocument ?? selectionDocument;
+    this.button.show(
+      top,
+      left,
+      () => {
+        void this.plugin.copyGlobalContext();
+      },
+      ownerDocument
+    );
   }
   forceUpdate() {
     this.button.hide();
@@ -616,11 +662,6 @@ var NotePipePlugin = class extends import_obsidian5.Plugin {
    * 全局复制（阅读模式 / 文件列表 / 编辑模式浮层按钮点击等场景）。
    */
   async copyGlobalContext() {
-    const fileListContext = resolveFileExplorerContext();
-    if (fileListContext) {
-      await this.copyFileList(fileListContext.files);
-      return;
-    }
     const activeView = this.app.workspace.getActiveViewOfType(import_obsidian5.MarkdownView);
     if (activeView && activeView.getMode() === "source" && activeView.editor) {
       const selection = activeView.editor.getSelection();

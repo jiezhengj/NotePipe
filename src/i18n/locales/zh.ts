@@ -31,8 +31,6 @@ export default {
     'settings.triggers': '触发方式',
     'settings.showFloatingButton': '显示浮层按钮',
     'settings.showFloatingButtonDesc': '选中文本时显示浮层复制按钮。',
-    'settings.enableHotkey': '启用快捷键',
-    'settings.enableHotkeyDesc': '启用 Ctrl+Shift+C / Cmd+Shift+C 快捷键。',
     'settings.advanced': '高级',
     'settings.alwaysCopy': '始终复制模式（实验性）',
     'settings.alwaysCopyDesc': '每次选中文本时自动附带上下文复制。可能导致性能问题。',
